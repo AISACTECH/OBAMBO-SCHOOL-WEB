@@ -227,15 +227,19 @@ export async function commitResultRows(input: {
       }
 
       const changed = existing.marks !== row.marks || existing.grade !== row.grade || (existing.points || 0) !== row.points || (existing.teacherComment || "") !== row.teacherComment || existing.admissionNumber !== row.admissionNumber;
-      if (!changed && existing.logicalKey === key) {
+      const keyChanged = existing.logicalKey !== key;
+      if (!changed && !keyChanged) {
         counts.unchanged += 1;
         continue;
       }
-      if (changed) previousRows.push(existing);
-      await tx.update(results).set({ logicalKey: key, admissionNumber: row.admissionNumber, marks: row.marks, grade: row.grade, points: row.points, teacherComment: row.teacherComment, importId: changed ? createdImport.id : existing.importId, status: changed ? "published" : existing.status }).where(eq(results.id, existing.id));
-      changedStudentIds.add(row.studentId);
-      if (changed) counts.updated += 1;
-      else counts.unchanged += 1;
+      previousRows.push(existing);
+      await tx.update(results).set({ logicalKey: key, admissionNumber: row.admissionNumber, marks: row.marks, grade: row.grade, points: row.points, teacherComment: row.teacherComment, importId: createdImport.id, status: "published" }).where(eq(results.id, existing.id));
+      if (changed) {
+        changedStudentIds.add(row.studentId);
+        counts.updated += 1;
+      } else {
+        counts.unchanged += 1;
+      }
     }
 
     await tx.update(resultImports).set({ previousRows }).where(eq(resultImports.id, createdImport.id));

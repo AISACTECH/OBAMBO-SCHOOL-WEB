@@ -16,9 +16,13 @@ export default function FeedbackForm() {
       submitterName: anonymous ? "" : form.get("submitterName"),
       anonymous,
     };
-    const res = await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    setStatus(res.ok ? "success" : "error");
-    if (res.ok) e.currentTarget.reset();
+    try {
+      const res = await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      setStatus(res.ok ? "success" : "error");
+      if (res.ok) e.currentTarget.reset();
+    } catch {
+      setStatus("error");
+    }
   }
 
   if (status === "success") {

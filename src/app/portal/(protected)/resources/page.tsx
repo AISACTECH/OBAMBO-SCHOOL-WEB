@@ -7,9 +7,22 @@ type Resource = { id: number; title: string; subject: string; form: string; term
 
 export default function PortalResourcesPage() {
   const [items, setItems] = useState<Resource[] | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/student/saved-resources").then((r) => r.json()).then((d) => setItems(d.resources || []));
+    const controller = new AbortController();
+    void fetch("/api/student/saved-resources", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load saved resources.");
+        return response.json();
+      })
+      .then((data) => {
+        if (!controller.signal.aborted) setItems(data.resources || []);
+      })
+      .catch((caught: unknown) => {
+        if (!controller.signal.aborted) setError(caught instanceof Error ? caught.message : "Could not load saved resources.");
+      });
+    return () => controller.abort();
   }, []);
 
   async function unsave(id: number) {
@@ -24,7 +37,9 @@ export default function PortalResourcesPage() {
         <Link href="/resources" className="btn btn-outline">Browse Learning Hub</Link>
       </div>
 
-      {items === null ? (
+      {error ? (
+        <p className="mt-6 text-sm text-[var(--color-danger)]">{error}</p>
+      ) : items === null ? (
         <div className="skeleton mt-6 h-40 w-full" />
       ) : items.length === 0 ? (
         <p className="mt-6 text-sm text-[var(--color-muted)]">You haven&apos;t saved any resources yet. Visit the Learning Hub to find revision papers, notes and past papers.</p>

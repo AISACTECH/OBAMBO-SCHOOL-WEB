@@ -11,10 +11,15 @@ export default function ForgotPasswordPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const res = await fetch("/api/student/forgot-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ admissionNumber }) });
-    const data = await res.json();
-    setMessage(data.message);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/student/forgot-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ admissionNumber }) });
+      const data = await res.json().catch(() => ({}));
+      setMessage(data.message || "Your request could not be submitted. Please contact the school office.");
+    } catch {
+      setMessage("We could not reach the server. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

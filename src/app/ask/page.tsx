@@ -21,10 +21,15 @@ export default function AskPage() {
     if (!q.trim()) return;
     setLoading(true);
     setQuestion("");
-    const res = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q }) });
-    const data = await res.json();
-    setHistory((h) => [{ question: q, answer: data.answer || data.error, sources: data.sources || [] }, ...h]);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q }) });
+      const data = await res.json().catch(() => ({}));
+      setHistory((h) => [{ question: q, answer: data.answer || data.error || "The assistant is temporarily unavailable.", sources: data.sources || [] }, ...h]);
+    } catch {
+      setHistory((h) => [{ question: q, answer: "The assistant is temporarily unavailable. Please try again.", sources: [] }, ...h]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

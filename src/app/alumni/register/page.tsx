@@ -15,13 +15,18 @@ export default function AlumniRegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const res = await fetch("/api/alumni/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-    if (res.ok) {
-      router.push("/alumni/dashboard");
-      router.refresh();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error || "Something went wrong.");
+    try {
+      const res = await fetch("/api/alumni/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      if (res.ok) {
+        router.push("/alumni/dashboard");
+        router.refresh();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Something went wrong.");
+        setLoading(false);
+      }
+    } catch {
+      setError("Could not reach the server. Please try again.");
       setLoading(false);
     }
   }

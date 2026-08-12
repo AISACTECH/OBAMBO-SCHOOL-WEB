@@ -12,17 +12,22 @@ export default function ContactForm() {
     setError("");
     const form = new FormData(e.currentTarget);
     const payload = Object.fromEntries(form.entries());
-    const res = await fetch("/api/contact", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) {
-      setStatus("success");
-      e.currentTarget.reset();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error || "Something went wrong. Please try again.");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        setStatus("success");
+        e.currentTarget.reset();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Something went wrong. Please try again.");
+        setStatus("error");
+      }
+    } catch {
+      setError("We could not reach the school server. Please check your connection and try again.");
       setStatus("error");
     }
   }

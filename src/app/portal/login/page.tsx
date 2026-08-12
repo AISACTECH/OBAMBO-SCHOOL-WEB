@@ -16,14 +16,19 @@ export default function StudentLoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const res = await fetch("/api/student/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-    if (res.ok) {
-      const next = searchParams.get("next");
-      router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/portal/dashboard");
-      router.refresh();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error || "Something went wrong. Please try again.");
+    try {
+      const res = await fetch("/api/student/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      if (res.ok) {
+        const next = searchParams.get("next");
+        router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/portal/dashboard");
+        router.refresh();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Something went wrong. Please try again.");
+        setLoading(false);
+      }
+    } catch {
+      setError("Could not reach the server. Please try again.");
       setLoading(false);
     }
   }
