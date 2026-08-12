@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "School Leadership" };
 export const dynamic = "force-dynamic";
 
 export default async function LeadershipPage() {
-  const leaders = await db.select().from(leadershipProfiles).where(eq(leadershipProfiles.published, true)).orderBy(leadershipProfiles.order);
+  const leaders = await db.select().from(leadershipProfiles).where(eq(leadershipProfiles.published, true)).orderBy(leadershipProfiles.order).limit(60);
 
   return (
     <div>

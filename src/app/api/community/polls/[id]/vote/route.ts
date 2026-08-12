@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { groups, pollOptions, pollVotes, polls } from "@/db/schema";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { currentIdentity } from "@/lib/identity";
 import { canAccessGroup } from "@/lib/community-access";
 
@@ -24,13 +24,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const poll = await getAccessiblePoll(pollId);
   if (!poll) return NextResponse.json({ error: "Poll not found." }, { status: 404 });
 
-  const options = await db.select().from(pollOptions).where(eq(pollOptions.pollId, pollId)).orderBy(asc(pollOptions.order));
-  const votes = await db.select().from(pollVotes).where(eq(pollVotes.pollId, pollId));
-  const counts = options.map((option) => ({ id: option.id, label: option.label, votes: votes.filter((vote) => vote.optionId === option.id).length }));
+  const [options, groupedVotes, totalVoteRows] = await Promise.all([
+    db.select().from(pollOptions).where(eq(pollOptions.pollId, pollId)).orderBy(asc(pollOptions.order)),
+    db.select({ optionId: pollVotes.optionId, count: sql<number>`count(*)` }).from(pollVotes).where(eq(pollVotes.pollId, pollId)).groupBy(pollVotes.optionId),
+    db.select({ count: sql<number>`count(*)` }).from(pollVotes).where(eq(pollVotes.pollId, pollId)),
+  ]);
+  const voteCounts = new Map(groupedVotes.map((vote) => [vote.optionId, Number(vote.count)]));
+  const counts = options.map((option) => ({ id: option.id, label: option.label, votes: voteCounts.get(option.id) || 0 }));
   const identity = await currentIdentity();
-  const myVote = identity ? votes.find((vote) => vote.voterType === identity.type && vote.voterId === identity.id) : null;
+  const myVote = identity ? await db.select({ optionId: pollVotes.optionId }).from(pollVotes).where(and(eq(pollVotes.pollId, pollId), eq(pollVotes.voterType, identity.type), eq(pollVotes.voterId, identity.id))).limit(1) : [];
 
-  return NextResponse.json({ poll, options: counts, totalVotes: votes.length, myVoteOptionId: myVote?.optionId ?? null });
+  return NextResponse.json({ poll, options: counts, totalVotes: Number(totalVoteRows[0]?.count || 0), myVoteOptionId: myVote[0]?.optionId ?? null });
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

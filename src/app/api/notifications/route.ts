@@ -2,15 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { notifications } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
-import { getSession, type SessionType } from "@/lib/session";
-
-async function currentIdentity() {
-  for (const type of ["student", "alumni", "staff"] as SessionType[]) {
-    const session = await getSession(type);
-    if (session) return { type, id: session.id };
-  }
-  return null;
-}
+import { currentIdentity } from "@/lib/identity";
 
 export async function GET() {
   const identity = await currentIdentity();

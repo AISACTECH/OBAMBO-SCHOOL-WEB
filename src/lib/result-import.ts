@@ -35,8 +35,12 @@ function cell(row: unknown[], index: number) {
   return index < 0 ? "" : String(row[index] ?? "").trim();
 }
 
+function normalizeKeyPart(value: string | number) {
+  return String(value).trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 export function resultKey(row: Pick<ResultRow, "studentId" | "examName" | "subject" | "term" | "year">) {
-  return [row.studentId, row.examName, row.subject, row.term, row.year].join("|").toLowerCase();
+  return [row.studentId, row.examName, row.subject, row.term, row.year].map(normalizeKeyPart).join("|");
 }
 
 export function validatePerformanceRows(rawRows: unknown[][], allStudents: StudentLookup[]) {
@@ -175,6 +179,7 @@ export async function commitResultRows(input: {
   source: "google_sheet_api" | "google_sheet_csv";
   sourceUrl: string;
   totalRows: number;
+  errorReport?: ResultError[];
   importedBy: { id: number; name: string };
 }) {
   const data = input.data.map((row) => resultRowSchema.parse(row));
@@ -189,6 +194,7 @@ export async function commitResultRows(input: {
 
   const totalRows = Math.max(input.totalRows, data.length);
   const previousRows: Array<typeof results.$inferSelect> = [];
+  const changedStudentIds = new Set<number>();
   const counts = { inserted: 0, updated: 0, unchanged: 0 };
   const importRecord = await db.transaction(async (tx) => {
     const [createdImport] = await tx.insert(resultImports).values({
@@ -199,29 +205,37 @@ export async function commitResultRows(input: {
       validRows: data.length,
       invalidRows: Math.max(0, totalRows - data.length),
       status: "published",
+      errorReport: input.errorReport || [],
       previousRows: [],
     }).returning();
 
     const existingRows = await tx.select().from(results).where(inArray(results.studentId, studentIds));
-    const existingByKey = new Map(existingRows.map((row) => [resultKey({ studentId: row.studentId, examName: row.examName, subject: row.subject, term: row.term, year: row.year }), row]));
+    const existingByKey = new Map(existingRows.map((row) => [row.logicalKey || resultKey({ studentId: row.studentId, examName: row.examName, subject: row.subject, term: row.term, year: row.year }), row]));
 
     for (const row of data) {
-      const existing = existingByKey.get(resultKey(row));
+      const key = resultKey(row);
+      const existing = existingByKey.get(key);
       const { row: _sourceRow, ...resultValues } = row;
       if (!existing) {
-        await tx.insert(results).values({ ...resultValues, importId: createdImport.id, status: "published" });
+        await tx.insert(results).values({ ...resultValues, logicalKey: key, importId: createdImport.id, status: "published" }).onConflictDoUpdate({
+          target: results.logicalKey,
+          set: { admissionNumber: row.admissionNumber, marks: row.marks, grade: row.grade, points: row.points, teacherComment: row.teacherComment, importId: createdImport.id, status: "published" },
+        });
+        changedStudentIds.add(row.studentId);
         counts.inserted += 1;
         continue;
       }
 
       const changed = existing.marks !== row.marks || existing.grade !== row.grade || (existing.points || 0) !== row.points || (existing.teacherComment || "") !== row.teacherComment || existing.admissionNumber !== row.admissionNumber;
-      if (!changed) {
+      if (!changed && existing.logicalKey === key) {
         counts.unchanged += 1;
         continue;
       }
-      previousRows.push(existing);
-      await tx.update(results).set({ admissionNumber: row.admissionNumber, marks: row.marks, grade: row.grade, points: row.points, teacherComment: row.teacherComment, importId: createdImport.id, status: "published" }).where(eq(results.id, existing.id));
-      counts.updated += 1;
+      if (changed) previousRows.push(existing);
+      await tx.update(results).set({ logicalKey: key, admissionNumber: row.admissionNumber, marks: row.marks, grade: row.grade, points: row.points, teacherComment: row.teacherComment, importId: changed ? createdImport.id : existing.importId, status: changed ? "published" : existing.status }).where(eq(results.id, existing.id));
+      changedStudentIds.add(row.studentId);
+      if (changed) counts.updated += 1;
+      else counts.unchanged += 1;
     }
 
     await tx.update(resultImports).set({ previousRows }).where(eq(resultImports.id, createdImport.id));
@@ -229,7 +243,7 @@ export async function commitResultRows(input: {
   });
 
   try {
-    await notifyByIds("student", studentIds, {
+    await notifyByIds("student", Array.from(changedStudentIds), {
       type: "results-released",
       title: "New examination results are available",
       body: "Your latest examination results have been published. Sign in to the student portal to view them.",

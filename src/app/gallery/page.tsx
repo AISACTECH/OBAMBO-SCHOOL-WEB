@@ -21,7 +21,8 @@ export default async function GalleryPage({ searchParams }: { searchParams: Prom
       eq(media.type, "image"),
       or(eq(media.consentStatus, "not_required"), eq(media.consentStatus, "consent_confirmed")),
     ))
-    .orderBy(desc(media.createdAt));
+    .orderBy(desc(media.createdAt))
+    .limit(100);
   const filtered = category === "all" ? rows : rows.filter((m) => m.category === category);
 
   return (

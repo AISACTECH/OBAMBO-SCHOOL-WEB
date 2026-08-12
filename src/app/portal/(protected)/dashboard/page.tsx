@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getActiveAnnouncements } from "@/lib/data";
 import { db } from "@/db";
 import { results, resources, examinations } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ export default async function StudentDashboard() {
   const session = await requireStudent();
   if (isResponse(session)) redirect("/portal/login");
   const [myResults, announcements, latestResources, upcomingExams] = await Promise.all([
-    db.select().from(results).where(eq(results.studentId, session!.id)).orderBy(desc(results.createdAt)).limit(8),
+    db.select().from(results).where(and(eq(results.studentId, session.id), eq(results.status, "published"))).orderBy(desc(results.createdAt)).limit(8),
     getActiveAnnouncements(4, "students"),
     db.select().from(resources).where(eq(resources.status, "published")).orderBy(desc(resources.createdAt)).limit(4),
     db.select().from(examinations).where(eq(examinations.status, "published")).orderBy(desc(examinations.year)).limit(3),

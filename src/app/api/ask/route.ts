@@ -57,9 +57,11 @@ export async function POST(req: NextRequest) {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(10_000),
         body: JSON.stringify({
           model: "gpt-4o-mini",
           temperature: 0.2,
+          max_tokens: 300,
           messages: [
             {
               role: "system",

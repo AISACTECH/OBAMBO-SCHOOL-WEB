@@ -11,7 +11,7 @@ export async function GET() {
   // Server-side authorization: results are only ever fetched for the
   // authenticated student's own numeric id. No client-supplied identifier
   // is ever trusted for this lookup.
-  const rows = await db.select().from(results).where(and(eq(results.studentId, session.id), eq(results.status, "published")));
+  const rows = await db.select().from(results).where(and(eq(results.studentId, session.id), eq(results.status, "published"))).orderBy(results.year, results.examName, results.subject).limit(5000);
 
   const examGroups = new Map<string, typeof rows>();
   for (const r of rows) {

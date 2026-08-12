@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tab
   const session = await requireStaff(entry.permission);
   if (isResponse(session)) return session;
 
-  const rows = await db.select().from(entry.table).orderBy(desc(entry.table.id));
+  const rows = await db.select().from(entry.table).orderBy(desc(entry.table.id)).limit(500);
   return NextResponse.json({ items: rows });
 }
 

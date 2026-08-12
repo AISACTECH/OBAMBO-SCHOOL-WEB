@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 const TYPES = ["career", "university", "entrepreneurship", "technology", "scholarship", "speaker", "internship"];
 
 export default async function MentorshipPage() {
-  const mentors = await db.select().from(alumni).where(and(eq(alumni.mentorshipAvailable, true), eq(alumni.verified, true), eq(alumni.privacy, "public")));
+  const mentors = await db.select().from(alumni).where(and(eq(alumni.mentorshipAvailable, true), eq(alumni.verified, true), eq(alumni.privacy, "public"))).limit(60);
 
   return (
     <div>

@@ -13,10 +13,27 @@ export default function AlumniDashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/alumni/profile").then((r) => r.json()).then((d) => setProfile(d.profile));
-  }, []);
+    const controller = new AbortController();
+    void fetch("/api/alumni/profile", { signal: controller.signal })
+      .then(async (response) => {
+        if (response.status === 401 || response.status === 403) {
+          router.replace("/alumni/login");
+          throw new Error("Your alumni session is no longer active.");
+        }
+        if (!response.ok) throw new Error("Could not load your alumni profile.");
+        return response.json();
+      })
+      .then((data) => {
+        if (!controller.signal.aborted) setProfile(data.profile || null);
+      })
+      .catch((caught: unknown) => {
+        if (!controller.signal.aborted && !(caught instanceof DOMException && caught.name === "AbortError")) setError(caught instanceof Error ? caught.message : "Could not load your alumni profile.");
+      });
+    return () => controller.abort();
+  }, [router]);
 
   async function logout() {
     await fetch("/api/alumni/logout", { method: "POST" });
@@ -48,6 +65,7 @@ export default function AlumniDashboard() {
     }
   }
 
+  if (error) return <div className="container-shell py-12"><div className="card-surface p-8 text-center text-sm text-[var(--color-danger)]">{error}</div></div>;
   if (!profile) return <div className="container-shell py-12"><div className="skeleton h-64 w-full" /></div>;
 
   return (

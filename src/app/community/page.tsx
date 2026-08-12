@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "St Mark's Community" };
 export const dynamic = "force-dynamic";
 
 export default async function CommunityPage() {
-  const publicGroups = await db.select().from(groups).where(eq(groups.visibility, "public"));
+  const publicGroups = await db.select().from(groups).where(eq(groups.visibility, "public")).limit(50);
 
   return (
     <div>

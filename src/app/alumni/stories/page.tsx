@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Where Are They Now? — Alumni Stori
 export const dynamic = "force-dynamic";
 
 export default async function AlumniStoriesPage() {
-  const stories = await db.select().from(alumniStories).where(eq(alumniStories.published, true));
+  const stories = await db.select().from(alumniStories).where(eq(alumniStories.published, true)).limit(60);
 
   return (
     <div>

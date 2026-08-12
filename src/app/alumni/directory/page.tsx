@@ -12,7 +12,7 @@ export default async function AlumniDirectoryPage({ searchParams }: { searchPara
   const conditions = [eq(alumni.verified, true), eq(alumni.active, true), eq(alumni.privacy, "public")];
   if (q) conditions.push(ilike(alumni.name, `%${q}%`));
 
-  const rows = await db.select().from(alumni).where(and(...conditions));
+  const rows = await db.select().from(alumni).where(and(...conditions)).limit(60);
   const filtered = year ? rows.filter((a) => String(a.graduationYear) === year) : rows;
 
   return (

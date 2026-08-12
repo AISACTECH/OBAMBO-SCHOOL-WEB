@@ -24,7 +24,7 @@ export default async function ResourcesPage({
   if (term !== "all") conditions.push(eq(resources.term, term));
   if (category !== "all") conditions.push(eq(resources.category, category));
 
-  const rows = await db.select().from(resources).where(and(...conditions)).orderBy(desc(resources.createdAt));
+  const rows = await db.select().from(resources).where(and(...conditions)).orderBy(desc(resources.createdAt)).limit(100);
 
   const forms = ["all", "Form 1", "Form 2", "Form 3", "Form 4"];
   const terms = ["all", "Term 1", "Term 2", "Term 3"];

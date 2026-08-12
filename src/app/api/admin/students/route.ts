@@ -20,7 +20,7 @@ const studentSchema = z.object({
 export async function GET() {
   const session = await requireStaff("manage_users");
   if (isResponse(session)) return session;
-  const rows = await db.select().from(students).orderBy(desc(students.createdAt));
+  const rows = await db.select().from(students).orderBy(desc(students.createdAt)).limit(1000);
   return NextResponse.json({
     students: rows.map(({ passwordHash: _passwordHash, birthCertHash: _birthCertHash, ...student }) => student),
   });

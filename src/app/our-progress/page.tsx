@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 const STATUS_LABEL: Record<string, string> = { ongoing: "Ongoing", completed: "Completed", planned: "Future Project" };
 
 export default async function ProgressPage() {
-  const rows = await db.select().from(developmentProjects).where(eq(developmentProjects.published, true));
+  const rows = await db.select().from(developmentProjects).where(eq(developmentProjects.published, true)).limit(100);
 
   return (
     <div>

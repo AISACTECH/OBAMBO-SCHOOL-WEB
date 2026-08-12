@@ -16,7 +16,7 @@ const groupSchema = z.object({
 export async function GET() {
   const session = await requireStaff("moderate_community");
   if (isResponse(session)) return session;
-  const rows = await db.select().from(groups);
+  const rows = await db.select().from(groups).limit(500);
   return NextResponse.json({ groups: rows });
 }
 

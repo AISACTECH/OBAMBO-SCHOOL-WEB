@@ -3,14 +3,14 @@ import Link from "next/link";
 import PageHero from "@/components/site/PageHero";
 import { db } from "@/db";
 import { alumni, alumniStories } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 export const metadata: Metadata = { title: "Alumni Network" };
 export const dynamic = "force-dynamic";
 
 export default async function AlumniLandingPage() {
   const [verifiedCount, stories] = await Promise.all([
-    db.select().from(alumni).where(and(eq(alumni.verified, true), eq(alumni.active, true))),
+    db.select({ count: sql<number>`count(*)` }).from(alumni).where(and(eq(alumni.verified, true), eq(alumni.active, true))),
     db.select().from(alumniStories).where(eq(alumniStories.published, true)).limit(3),
   ]);
 
@@ -39,7 +39,7 @@ export default async function AlumniLandingPage() {
         </div>
 
         <div className="mt-10 flex flex-wrap gap-3">
-          <p className="text-sm text-[var(--color-muted)]">{verifiedCount.length} verified alumni have joined so far.</p>
+          <p className="text-sm text-[var(--color-muted)]">{Number(verifiedCount[0]?.count || 0)} verified alumni have joined so far.</p>
         </div>
 
         {stories.length > 0 && (

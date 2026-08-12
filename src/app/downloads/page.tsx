@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function DownloadsPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const { category = "all" } = await searchParams;
   const CATEGORIES = ["all", "admission", "policies", "academic", "forms", "circulars", "examination", "newsletters", "meetings", "publications"];
-  const rows = await db.select().from(documents).where(eq(documents.visibility, "public")).orderBy(desc(documents.createdAt));
+  const rows = await db.select().from(documents).where(eq(documents.visibility, "public")).orderBy(desc(documents.createdAt)).limit(100);
   const filtered = category === "all" ? rows : rows.filter((d) => d.category === category);
 
   return (

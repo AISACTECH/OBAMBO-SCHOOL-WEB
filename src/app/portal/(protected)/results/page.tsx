@@ -24,10 +24,25 @@ function escapeHtml(value: unknown) {
 export default function ResultsPage() {
   const [exams, setExams] = useState<ExamResult[] | null>(null);
   const [active, setActive] = useState(0);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/student/results").then((r) => r.json()).then((d) => setExams(d.exams || []));
+    const controller = new AbortController();
+    void fetch("/api/student/results", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load your results.");
+        return response.json();
+      })
+      .then((data) => {
+        if (!controller.signal.aborted) setExams(data.exams || []);
+      })
+      .catch((caught: unknown) => {
+        if (!controller.signal.aborted) setError(caught instanceof Error ? caught.message : "Could not load your results.");
+      });
+    return () => controller.abort();
   }, []);
+
+  if (error) return <div className="card-surface p-8 text-center text-sm text-[var(--color-danger)]">{error}</div>;
 
   if (exams === null) {
     return <div className="skeleton h-64 w-full" />;

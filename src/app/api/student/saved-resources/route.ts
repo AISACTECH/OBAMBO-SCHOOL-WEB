@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     .from(savedResources)
     .where(and(eq(savedResources.studentId, session.id), eq(savedResources.resourceId, resourceId)));
   if (existing.length === 0) {
-    await db.insert(savedResources).values({ studentId: session.id, resourceId });
+    await db.insert(savedResources).values({ studentId: session.id, resourceId }).onConflictDoNothing({ target: [savedResources.studentId, savedResources.resourceId] });
   }
   return NextResponse.json({ ok: true });
 }

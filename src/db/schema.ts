@@ -97,7 +97,7 @@ export const savedResources = pgTable("saved_resources", {
   studentId: integer("student_id").notNull(),
   resourceId: integer("resource_id").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => [uniqueIndex("saved_resources_student_resource_idx").on(t.studentId, t.resourceId)]);
 
 /* -------------------------------------------------------------------------- */
 /*  ALUMNI                                                                    */
@@ -313,11 +313,12 @@ export const results = pgTable(
     teacherComment: text("teacher_comment").default(""),
     term: text("term").notNull(),
     year: integer("year").notNull(),
+    logicalKey: text("logical_key"),
     importId: integer("import_id"),
     status: text("status").notNull().default("published"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("results_student_idx").on(t.studentId)],
+  (t) => [index("results_student_idx").on(t.studentId), uniqueIndex("results_logical_key_idx").on(t.logicalKey)],
 );
 
 type ResultSnapshot = {
@@ -332,6 +333,7 @@ type ResultSnapshot = {
   teacherComment: string | null;
   term: string;
   year: number;
+  logicalKey: string | null;
   importId: number | null;
   status: string;
 };

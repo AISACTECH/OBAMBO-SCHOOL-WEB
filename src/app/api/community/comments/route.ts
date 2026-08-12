@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 
   const identity = await currentIdentity();
   if (!(await getAccessiblePost(postId, identity))) return NextResponse.json({ comments: [] });
-  const rows = await db.select().from(comments).where(and(eq(comments.postId, postId), eq(comments.status, "published"))).orderBy(asc(comments.createdAt));
+  const rows = await db.select().from(comments).where(and(eq(comments.postId, postId), eq(comments.status, "published"))).orderBy(asc(comments.createdAt)).limit(200);
   return NextResponse.json({ comments: rows });
 }
 

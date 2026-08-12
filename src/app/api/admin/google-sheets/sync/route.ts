@@ -25,6 +25,7 @@ export async function POST() {
       source: "google_sheet_api",
       sourceUrl: preview.sourceUrl,
       totalRows: preview.totalRows,
+      errorReport: preview.errorReport,
       importedBy: { id: session.id, name: session.name },
     });
     await db.update(googleSheetConnections).set({ status: "configured", lastSyncAt: new Date(), lastError: "", updatedAt: new Date() }).where(eq(googleSheetConnections.id, connection.id));

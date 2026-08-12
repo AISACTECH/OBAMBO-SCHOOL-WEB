@@ -30,6 +30,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
         teacherComment: previous.teacherComment,
         term: previous.term,
         year: previous.year,
+        logicalKey: previous.logicalKey,
         importId: previous.importId,
         status: previous.status,
       }).where(and(eq(results.id, previous.id), eq(results.importId, importId)));

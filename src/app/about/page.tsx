@@ -29,8 +29,8 @@ const SECTIONS = [
 export default async function AboutPage() {
   const [pagesData, leaders, facilityRows] = await Promise.all([
     Promise.all(SECTIONS.map((s) => getPage(s.slug))),
-    db.select().from(leadershipProfiles).where(eq(leadershipProfiles.published, true)).orderBy(leadershipProfiles.order),
-    db.select().from(facilities).where(eq(facilities.published, true)),
+    db.select().from(leadershipProfiles).where(eq(leadershipProfiles.published, true)).orderBy(leadershipProfiles.order).limit(60),
+    db.select().from(facilities).where(eq(facilities.published, true)).limit(60),
   ]);
 
   return (

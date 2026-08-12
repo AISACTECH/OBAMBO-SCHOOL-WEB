@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { announcements, news, resources, pages, events, alumni, groups } from "@/db/schema";
 import { and, eq, ilike, or } from "drizzle-orm";
+import { getClientIp, rateLimit } from "@/lib/security";
 
 export async function GET(req: NextRequest) {
+  const limit = rateLimit(`search:${getClientIp(req.headers)}`, 60, 60 * 1000);
+  if (!limit.allowed) return NextResponse.json({ error: "Too many search requests. Please try again shortly." }, { status: 429 });
   const q = req.nextUrl.searchParams.get("q")?.trim().slice(0, 200) || "";
   if (q.length < 2) return NextResponse.json({ results: [] });
   const like = `%${q}%`;

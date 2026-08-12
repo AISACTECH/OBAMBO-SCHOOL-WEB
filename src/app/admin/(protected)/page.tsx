@@ -17,9 +17,22 @@ const QUICK_ACTIONS = [
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/admin/dashboard-stats").then((r) => r.json()).then(setStats);
+    const controller = new AbortController();
+    void fetch("/api/admin/dashboard-stats", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load dashboard statistics.");
+        return response.json();
+      })
+      .then((data) => {
+        if (!controller.signal.aborted) setStats(data);
+      })
+      .catch((caught: unknown) => {
+        if (!controller.signal.aborted) setError(caught instanceof Error ? caught.message : "Could not load dashboard statistics.");
+      });
+    return () => controller.abort();
   }, []);
 
   const cards = stats
@@ -41,6 +54,7 @@ export default function AdminDashboard() {
       <div>
         <h1 className="font-display text-2xl font-bold">School Control Center</h1>
         <p className="mt-1 text-sm text-[var(--color-muted)]">Manage every part of St Mark&apos;s digital campus from here.</p>
+        {error && <p className="mt-3 rounded-lg bg-[var(--color-danger)]/10 p-3 text-sm text-[var(--color-danger)]">{error}</p>}
       </div>
 
       <div className="flex flex-wrap gap-2">

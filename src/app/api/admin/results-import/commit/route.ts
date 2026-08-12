@@ -8,6 +8,7 @@ const commitSchema = z.object({
   data: z.array(resultRowSchema).min(1).max(10_000),
   sourceUrl: z.string().trim().max(2_000).optional().default(""),
   totalRows: z.number().int().min(1).max(10_000).optional(),
+  errorReport: z.array(z.object({ row: z.number().int(), field: z.string().max(100), value: z.string().max(2_000), error: z.string().max(500), suggestedFix: z.string().max(500) }).strict()).max(10_000).optional().default([]),
 });
 
 export async function POST(req: NextRequest) {
@@ -26,6 +27,7 @@ export async function POST(req: NextRequest) {
       source: "google_sheet_csv",
       sourceUrl: parsed.data.sourceUrl,
       totalRows: parsed.data.totalRows || parsed.data.data.length,
+      errorReport: parsed.data.errorReport,
       importedBy: { id: session.id, name: session.name },
     });
     return NextResponse.json({ ok: true, ...result });
