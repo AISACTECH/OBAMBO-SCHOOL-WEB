@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+public/uploads/*
+!public/uploads/demo/
+public/uploads/demo/*
+!public/uploads/demo/sample-placeholder.pdf
