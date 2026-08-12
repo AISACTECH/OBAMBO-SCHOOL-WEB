@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "saved_resources_student_resource_idx" ON "saved_resources" ("student_id","resource_id");
